@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: f03bb84883d0b164a8d89394e7fef303
+AssetOrigin:
+  serializedVersion: 1
+  productId: 297320
+  packageName: 'PurrNet: Multiplayer Networking'
+  packageVersion: v1.23.0
+  assetPath: Assets/PurrNet/Addons/Edgegap/Runtime/EdgegapJson.cs
+  uploadId: 994588

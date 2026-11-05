@@ -99,7 +99,7 @@
     },
     "com.unity.burst": {
       "version": "2.0.0",
-      "depth": 2,
+      "depth": 1,
       "source": "builtin",
       "dependencies": {}
     },
@@ -112,7 +112,7 @@
     },
     "com.unity.collections": {
       "version": "6.6.0",
-      "depth": 1,
+      "depth": 0,
       "source": "builtin",
       "dependencies": {
         "com.unity.burst": "1.8.25",
@@ -178,13 +178,20 @@
     },
     "com.unity.mathematics": {
       "version": "1.4.0",
-      "depth": 1,
+      "depth": 0,
       "source": "builtin",
       "dependencies": {}
     },
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.6",
-      "depth": 2,
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.nuget.newtonsoft-json": {
+      "version": "3.2.2",
+      "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -261,7 +268,7 @@
     },
     "com.unity.test-framework.performance": {
       "version": "6.6.0",
-      "depth": 2,
+      "depth": 1,
       "source": "builtin",
       "dependencies": {
         "com.unity.test-framework": "1.1.33",
@@ -300,6 +307,28 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "dev.purrnet.purrlobby": {
+      "version": "file:dev.purrnet.purrlobby",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "dev.purrnet.services": {
+      "version": "https://github.com/PurrNet/PurrServices.git?path=Assets/Tool#v1.2.1",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "83cd197c12ff4fd76266273cf82ae4523885f920"
+    },
+    "dev.purrnet.ui": {
+      "version": "https://github.com/PurrNet/PurrUI.git?path=Assets/PurrUI#v1.6.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0"
+      },
+      "hash": "7bb4b68b815f4691261bb8bb8a7d1905078d594e"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
