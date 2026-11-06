@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: dc593acf54f9f2d4c919b6fe178d558e
+guid: d4a3f167066f8fa43861c1a6aa2b0e9e
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2920249483098092067
-    second: hinge_profile_20261105_193826_via_10015_io_0
+      213: 4065276217684287000
+    second: hinge_profile_20261105_174558_via_10015_io_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -46,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 2
+  spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -128,13 +128,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: hinge_profile_20261105_193826_via_10015_io_0
+      name: hinge_profile_20261105_174558_via_10015_io_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
         width: 780
-        height: 4814
+        height: 5003
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ddd8b6831903977d0800000000000000
-      internalID: -2920249483098092067
+      spriteID: 81e5ae46e23ca6830800000000000000
+      internalID: 4065276217684287000
       vertices: []
       indices: 
       edges: []
@@ -153,7 +153,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -163,7 +163,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      hinge_profile_20261105_193826_via_10015_io_0: -2920249483098092067
+      hinge_profile_20261105_174558_via_10015_io_0: 4065276217684287000
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
