@@ -3,10 +3,11 @@ using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
-
+using PurrNet;
 
 //using unity discussions post with edits
-public class SettingsMenu : MonoBehaviour
+//took this from my projecy bee since it works 
+public class SettingsMenu : NetworkBehaviour
 {
     [Header("UI Sliders")]
    

@@ -6,7 +6,9 @@ using TMPro;
 using PurrNet;
 using UnityEngine.SceneManagement;
 
-public class Round1ReadyManager : NetworkBehaviour
+//Started with Purrnet docs and API 
+//Used ChatGPT to help with some of the code 
+public class StartRounds : NetworkBehaviour
 {
     [Header("Round 1 Ready Buttons")]
     [SerializeField] private Button[] startRound1Buttons;
@@ -27,7 +29,7 @@ public class Round1ReadyManager : NetworkBehaviour
     [SerializeField] private GameObject round1Content;
 
     [Header("Submission Manager")]
-    [SerializeField] private Round1SubmissionManager submissionManager;
+    [SerializeField] private RoundsSubmissionManager submissionManager;
 
     [Header("Score UI")]
     [SerializeField] private TextMeshProUGUI teamScoreText;

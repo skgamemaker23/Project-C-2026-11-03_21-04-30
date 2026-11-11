@@ -4,8 +4,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using PurrNet;
-
-public class Round1SubmissionManager : NetworkBehaviour
+//used purrnet docs/API 
+//some chatgpt help :C 
+public class RoundsSubmissionManager : NetworkBehaviour
 {
     [Header("Player 1 Submit Buttons - Host")]
     [SerializeField] private Button[] player1Buttons;
@@ -23,7 +24,7 @@ public class Round1SubmissionManager : NetworkBehaviour
     [SerializeField] private TextMeshProUGUI revealText;
 
     [Header("Score Manager")]
-    [SerializeField] private Round1ReadyManager readyManager;
+    [SerializeField] private StartRounds readyManager;
 
     private bool player1Submitted;
     private bool player2Submitted;
