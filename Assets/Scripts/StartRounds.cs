@@ -6,10 +6,12 @@ using TMPro;
 using PurrNet;
 using UnityEngine.SceneManagement;
 
-//Started with Purrnet docs and API 
-//Used ChatGPT to help with some of the code 
+// Started with PurrNet docs and API
+// Used ChatGPT to help with some of the code
+
 public class StartRounds : NetworkBehaviour
 {
+    // Ready buttons
     [Header("Round 1 Ready Buttons")]
     [SerializeField] private Button[] startRound1Buttons;
 
@@ -22,50 +24,55 @@ public class StartRounds : NetworkBehaviour
     [Header("Round 4 Ready Buttons")]
     [SerializeField] private Button[] startRound4Buttons;
 
+
+    // Player profiles
     [Header("Profile UI")]
     [SerializeField] private GameObject profiles;
 
-    [Header("Shared Submission Screen")]
-    [SerializeField] private GameObject round1Content;
 
+    // Gameplay screen
+    [Header("Shared Submission Screen")]
+    [SerializeField] private GameObject roundContent;
+
+
+    // Submission manager
     [Header("Submission Manager")]
     [SerializeField] private RoundsSubmissionManager submissionManager;
 
+
+    // Score
     [Header("Score UI")]
     [SerializeField] private TextMeshProUGUI teamScoreText;
 
+
+    // Win and lose screen
     [Header("Win / Lose Screen")]
     [SerializeField] private GameObject resultsPanel;
     [SerializeField] private TextMeshProUGUI resultText;
-    private readonly HashSet<PlayerID> readyPlayers =
-        new HashSet<PlayerID>();
 
-    private bool localPlayerIsReady;
-    private bool roundHasStarted;
+
+    // Keeps track of who is ready
+    private HashSet<PlayerID> readyPlayers = new HashSet<PlayerID>();
+
+    private bool localPlayerIsReady = false;
+    private bool roundHasStarted = false;
 
     private int currentRound = 0;
     private int teamScore = 0;
 
     private const int RequiredPlayers = 2;
 
+
     private void Start()
     {
-        if (profiles != null)
-            profiles.SetActive(true);
+        
 
-        if (round1Content != null)
-            round1Content.SetActive(false);
-
-        // Only Round 1 buttons appear at the beginning.
         ShowOnlyRoundButtons(1);
-
         UpdateScoreDisplay(teamScore);
     }
 
-    // ---------------------------------
-    // START BUTTON METHODS
-    // ---------------------------------
 
+    // Ready button methods
     public void OnStartRound1Clicked()
     {
         TryStartRound(1);
@@ -86,46 +93,50 @@ public class StartRounds : NetworkBehaviour
         TryStartRound(4);
     }
 
-    // ---------------------------------
-    // READY SYSTEM
-    // ---------------------------------
 
+    // Checks if the player can start the round
     private void TryStartRound(int round)
     {
-        if (localPlayerIsReady || roundHasStarted)
+        if (localPlayerIsReady == true)
+        {
             return;
+        }
+
+        if (roundHasStarted == true)
+        {
+            return;
+        }
 
         if (round != currentRound + 1)
+        {
             return;
+        }
 
         localPlayerIsReady = true;
 
         SetButtons(GetButtonsForRound(round), false);
 
-        Debug.Log(
-            "Player ready for Round " + round +
-            ". Waiting for the other player..."
-        );
-
         SendReadyToServer(round);
     }
 
+
+    // Sends ready information to the server
     [ServerRpc]
-    private void SendReadyToServer(
-        int round,
-        RPCInfo info = default)
+    private void SendReadyToServer(int round, RPCInfo info = default)
     {
-        if (roundHasStarted || round != currentRound + 1)
+        if (roundHasStarted == true)
+        {
             return;
+        }
+
+        if (round != currentRound + 1)
+        {
+            return;
+        }
 
         readyPlayers.Add(info.sender);
 
-        Debug.Log(
-            "Round " + round + " ready players: " +
-            readyPlayers.Count + "/" + RequiredPlayers
-        );
-
-        // Both players must be ready.
+        // Start when both players are ready
         if (readyPlayers.Count >= RequiredPlayers)
         {
             currentRound = round;
@@ -137,10 +148,8 @@ public class StartRounds : NetworkBehaviour
         }
     }
 
-    // ---------------------------------
-    // START ROUND FOR BOTH PLAYERS
-    // ---------------------------------
 
+    // Starts the round for both players
     [ObserversRpc]
     private void StartRoundForEveryone(int round)
     {
@@ -149,12 +158,16 @@ public class StartRounds : NetworkBehaviour
         localPlayerIsReady = false;
 
         if (profiles != null)
+        {
             profiles.SetActive(false);
+        }
 
-        if (round1Content != null)
-            round1Content.SetActive(true);
+        if (roundContent != null)
+        {
+            roundContent.SetActive(true);
+        }
 
-        // All ready buttons become unavailable during the round.
+        // Turn off all ready buttons
         SetButtons(startRound1Buttons, false);
         SetButtons(startRound2Buttons, false);
         SetButtons(startRound3Buttons, false);
@@ -166,22 +179,18 @@ public class StartRounds : NetworkBehaviour
         }
         else
         {
-            Debug.LogError(
-                "Submission Manager is not assigned!"
-            );
         }
 
-        Debug.Log("ROUND " + round + " STARTED!");
     }
 
-    // ---------------------------------
-    // FINISH ROUND
-    // ---------------------------------
 
+    // Called when the round is finished
     public void FinishRound()
     {
-        if (!roundHasStarted)
+        if (roundHasStarted == false)
+        {
             return;
+        }
 
         roundHasStarted = false;
         readyPlayers.Clear();
@@ -189,32 +198,37 @@ public class StartRounds : NetworkBehaviour
         FinishRoundForEveryone(currentRound, teamScore);
     }
 
+
+    // Finishes the round for both players
     [ObserversRpc]
     private void FinishRoundForEveryone(int completedRound, int score)
     {
         currentRound = completedRound;
         teamScore = score;
+
         roundHasStarted = false;
         localPlayerIsReady = false;
 
-        // Hide the gameplay screen.
-        if (round1Content != null)
-            round1Content.SetActive(false);
+        if (roundContent != null)
+        {
+            roundContent.SetActive(false);
+        }
 
-        // Hide all round buttons.
         HideAllRoundButtons();
-
         UpdateScoreDisplay(score);
 
-        // Check if all 4 rounds are finished.
+        // Check if all rounds are finished
         if (completedRound >= 4)
         {
-            // Keep profiles hidden!
             if (profiles != null)
+            {
                 profiles.SetActive(false);
+            }
 
             if (resultsPanel != null)
+            {
                 resultsPanel.SetActive(true);
+            }
 
             if (resultText != null)
             {
@@ -228,22 +242,26 @@ public class StartRounds : NetworkBehaviour
                 }
             }
 
-            Debug.Log(score >= 3 ? "YOU WIN!" : "YOU LOSE!");
+            if (score >= 3)
+            {
+            }
+            
+
             return;
         }
 
-        // Only show profiles if another round remains.
+        // Show profiles and the next round buttons
         if (profiles != null)
+        {
             profiles.SetActive(true);
+        }
 
         ShowOnlyRoundButtons(completedRound + 1);
 
-        Debug.Log("Round " + (completedRound + 1) + " is ready!");
     }
-    // ---------------------------------
-    // BUTTON VISIBILITY
-    // ---------------------------------
 
+
+    // Shows the buttons for the next round
     private void ShowOnlyRoundButtons(int round)
     {
         HideAllRoundButtons();
@@ -251,18 +269,22 @@ public class StartRounds : NetworkBehaviour
         Button[] nextButtons = GetButtonsForRound(round);
 
         if (nextButtons == null)
+        {
             return;
+        }
 
         foreach (Button button in nextButtons)
         {
-            if (button == null)
-                continue;
-
-            button.gameObject.SetActive(true);
-            button.interactable = true;
+            if (button != null)
+            {
+                button.gameObject.SetActive(true);
+                button.interactable = true;
+            }
         }
     }
 
+
+    // Hides all round buttons
     private void HideAllRoundButtons()
     {
         SetButtonObjectsActive(startRound1Buttons, false);
@@ -271,59 +293,70 @@ public class StartRounds : NetworkBehaviour
         SetButtonObjectsActive(startRound4Buttons, false);
     }
 
-    private void SetButtonObjectsActive(
-        Button[] buttons,
-        bool active)
+
+    // Turns button objects on or off
+    private void SetButtonObjectsActive(Button[] buttons, bool active)
     {
         if (buttons == null)
+        {
             return;
+        }
 
         foreach (Button button in buttons)
         {
             if (button != null)
+            {
                 button.gameObject.SetActive(active);
+            }
         }
     }
 
+
+    // Gets the buttons for the selected round
     private Button[] GetButtonsForRound(int round)
     {
-        switch (round)
+        if (round == 1)
         {
-            case 1:
-                return startRound1Buttons;
-
-            case 2:
-                return startRound2Buttons;
-
-            case 3:
-                return startRound3Buttons;
-
-            case 4:
-                return startRound4Buttons;
-
-            default:
-                return null;
+            return startRound1Buttons;
+        }
+        else if (round == 2)
+        {
+            return startRound2Buttons;
+        }
+        else if (round == 3)
+        {
+            return startRound3Buttons;
+        }
+        else if (round == 4)
+        {
+            return startRound4Buttons;
+        }
+        else
+        {
+            return null;
         }
     }
 
-    private void SetButtons(
-        Button[] buttons,
-        bool interactable)
+
+    // Turns buttons interactable or not
+    private void SetButtons(Button[] buttons, bool interactable)
     {
         if (buttons == null)
+        {
             return;
+        }
 
         foreach (Button button in buttons)
         {
             if (button != null)
+            {
                 button.interactable = interactable;
+            }
         }
     }
 
-    // ---------------------------------
-    // TEAM SCORE
-    // ---------------------------------
 
+    // Adds a point to the team score
     public void AddTeamPoint()
     {
         teamScore++;
@@ -333,13 +366,18 @@ public class StartRounds : NetworkBehaviour
         UpdateScoreForEveryone(teamScore);
     }
 
+
+    // Updates the score for both players
     [ObserversRpc]
     private void UpdateScoreForEveryone(int newScore)
     {
         teamScore = newScore;
+
         UpdateScoreDisplay(newScore);
     }
 
+
+    // Shows the score on the screen
     private void UpdateScoreDisplay(int score)
     {
         if (teamScoreText != null)
@@ -347,19 +385,26 @@ public class StartRounds : NetworkBehaviour
             teamScoreText.text = "Score: " + score + "/4";
         }
     }
+
+
+    // Return to main menu
     public void ReturnToMainMenu()
     {
         RequestReturnToMainMenu();
     }
 
+
+    // Tells the server to return to the main menu
     [ServerRpc(requireOwnership: false)]
     private void RequestReturnToMainMenu()
     {
-        LoadMainMenuForEveryone();
+        MainMenu();
     }
 
+
+    // Loads the main menu for everyone
     [ObserversRpc]
-    private void LoadMainMenuForEveryone()
+    private void MainMenu()
     {
         SceneManager.LoadScene("MainMenu");
     }

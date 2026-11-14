@@ -4,51 +4,58 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using PurrNet;
-//used purrnet docs/API 
-//some chatgpt help :C 
+
+// Used PurrNet docs
+// Some ChatGPT help 
+
 public class RoundsSubmissionManager : NetworkBehaviour
 {
-    [Header("Player 1 Submit Buttons - Host")]
+    [Header("Player 1 Buttons")]
     [SerializeField] private Button[] player1Buttons;
 
-    [Header("Player 2 Submit Buttons - Joiner")]
+    [Header("Player 2 Buttons")]
     [SerializeField] private Button[] player2Buttons;
 
-    [Header("Player 1 Open Profile Buttons")]
+    [Header("Player Profile Buttons")]
     [SerializeField] private Button[] player1ProfileButtons;
-
-    [Header("Player 2 Open Profile Buttons")]
     [SerializeField] private Button[] player2ProfileButtons;
 
-    [Header("UI")]
+    [Header("Round Text")]
     [SerializeField] private TextMeshProUGUI revealText;
 
     [Header("Score Manager")]
     [SerializeField] private StartRounds readyManager;
 
-    private bool player1Submitted;
-    private bool player2Submitted;
-    private bool roundComplete;
 
-    private int player1Card;
-    private int player2Card;
-    private int currentRound;
+    // Checks if each player has submitted
+    private bool player1Submitted = false;
+    private bool player2Submitted = false;
+    private bool roundComplete = false;
 
-    private readonly bool[] player1Matched = new bool[4];
-    private readonly bool[] player2Matched = new bool[4];
+    // Stores which cards the players picked
+    private int player1Card = 0;
+    private int player2Card = 0;
+
+    private int currentRound = 0;
+
+    // Remembers which characters already matched
+    private bool[] player1Matched = new bool[4];
+    private bool[] player2Matched = new bool[4];
+
 
     private void Start()
     {
         RefreshButtons();
     }
 
+
     protected override void OnSpawned()
     {
         RefreshButtons();
     }
 
-    // BEGIN ROUND
 
+    // Starts a new round
     public void BeginRound(int roundNumber)
     {
         currentRound = roundNumber;
@@ -64,149 +71,269 @@ public class RoundsSubmissionManager : NetworkBehaviour
 
         if (revealText != null)
         {
-            revealText.text =
-                "ROUND " + currentRound + "\n" +
-                (Player1GoesFirst()
-                    ? "Waiting for Player 1..."
-                    : "Waiting for Player 2...");
+            if (Player1GoesFirst() == true)
+            {
+                revealText.text = "ROUND " + currentRound + "\nWaiting for Player 1...";
+            }
+            else
+            {
+                revealText.text = "ROUND " + currentRound + "\nWaiting for Player 2...";
+            }
         }
 
-        Debug.Log("Submission system ready for Round " + currentRound);
+        Debug.Log("Round " + currentRound + " started!");
     }
 
+
+    // Player 1 starts rounds 1 and 3
     private bool Player1GoesFirst()
     {
-        return currentRound == 1 || currentRound == 3;
+        if (currentRound == 1 || currentRound == 3)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
-    // BUTTON REFRESH
 
+    // Makes the buttons usable again
     private void RefreshButtons()
     {
-        SetAvailableButtons(player1Buttons);
-        SetAvailableButtons(player2Buttons);
+        SetButtons(player1Buttons);
+        SetButtons(player2Buttons);
     }
 
-    private void SetAvailableButtons(Button[] buttons)
+
+    private void SetButtons(Button[] buttons)
     {
         if (buttons == null)
+        {
             return;
+        }
 
         foreach (Button button in buttons)
         {
-            if (button != null && button.gameObject.activeSelf)
-                button.interactable = true;
+            if (button != null)
+            {
+                if (button.gameObject.activeSelf == true)
+                {
+                    button.interactable = true;
+                }
+            }
         }
     }
 
-    // PLAYER 1 BUTTONS
 
-    public void SubmitWitch() => SubmitPlayer1Card(1);
-    public void SubmitVamp() => SubmitPlayer1Card(2);
-    public void SubmitWolf() => SubmitPlayer1Card(3);
-    public void SubmitGhost() => SubmitPlayer1Card(4);
+    // Player 1 card buttons
+    public void SubmitWitch()
+    {
+        SubmitPlayer1Card(1);
+    }
 
-    // PLAYER 2 BUTTONS
+    public void SubmitVamp()
+    {
+        SubmitPlayer1Card(2);
+    }
 
-    public void SubmitFairy() => SubmitPlayer2Card(5);
-    public void SubmitZombie() => SubmitPlayer2Card(6);
-    public void SubmitSkeleton() => SubmitPlayer2Card(7);
-    public void SubmitDemon() => SubmitPlayer2Card(8);
+    public void SubmitWolf()
+    {
+        SubmitPlayer1Card(3);
+    }
 
-    // TURN CHECKS
+    public void SubmitGhost()
+    {
+        SubmitPlayer1Card(4);
+    }
 
+
+    // Player 2 card buttons
+    public void SubmitFairy()
+    {
+        SubmitPlayer2Card(5);
+    }
+
+    public void SubmitZombie()
+    {
+        SubmitPlayer2Card(6);
+    }
+
+    public void SubmitSkeleton()
+    {
+        SubmitPlayer2Card(7);
+    }
+
+    public void SubmitDemon()
+    {
+        SubmitPlayer2Card(8);
+    }
+
+
+    // Checks if Player 1 can submit
     private bool CanPlayer1Submit()
     {
         if (currentRound < 1 || currentRound > 4)
+        {
             return false;
+        }
 
-        if (roundComplete || player1Submitted)
+        if (roundComplete == true || player1Submitted == true)
+        {
             return false;
+        }
 
-        if (Player1GoesFirst())
-            return !player2Submitted;
-
-        return player2Submitted;
+        if (Player1GoesFirst() == true)
+        {
+            if (player2Submitted == false)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            if (player2Submitted == true)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
+
+    // Checks if Player 2 can submit
     private bool CanPlayer2Submit()
     {
         if (currentRound < 1 || currentRound > 4)
+        {
             return false;
+        }
 
-        if (roundComplete || player2Submitted)
+        if (roundComplete == true || player2Submitted == true)
+        {
             return false;
+        }
 
-        if (!Player1GoesFirst())
-            return !player1Submitted;
-
-        return player1Submitted;
+        if (Player1GoesFirst() == false)
+        {
+            if (player1Submitted == false)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            if (player1Submitted == true)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
-    // PLAYER 1 SUBMISSION
 
+    // Player 1 submits their card
     private void SubmitPlayer1Card(int card)
     {
-        if (!isHost || !CanPlayer1Submit())
-            return;
-
-        SubmitPlayer1CardServer(card);
+        if (isHost == true)
+        {
+            if (CanPlayer1Submit() == true)
+            {
+                SubmitPlayer1CardServer(card);
+            }
+        }
     }
+
 
     [ServerRpc(requireOwnership: false)]
     private void SubmitPlayer1CardServer(int card)
     {
-        if (!CanPlayer1Submit())
+        if (CanPlayer1Submit() == false)
+        {
             return;
+        }
 
         if (card < 1 || card > 4)
+        {
             return;
+        }
 
-        if (player1Matched[card - 1])
+        if (player1Matched[card - 1] == true)
+        {
             return;
+        }
 
         player1Submitted = true;
         player1Card = card;
 
         RevealSubmittedCard(1, card);
 
-        if (player2Submitted)
+        if (player2Submitted == true)
+        {
             CheckCompatibility();
+        }
     }
 
-    // PLAYER 2 SUBMISSION
 
+    // Player 2 submits their card
     private void SubmitPlayer2Card(int card)
     {
-        if (isHost || !CanPlayer2Submit())
-            return;
-
-        SubmitPlayer2CardServer(card);
+        if (isHost == false)
+        {
+            if (CanPlayer2Submit() == true)
+            {
+                SubmitPlayer2CardServer(card);
+            }
+        }
     }
+
 
     [ServerRpc(requireOwnership: false)]
     private void SubmitPlayer2CardServer(int card)
     {
-        if (!CanPlayer2Submit())
+        if (CanPlayer2Submit() == false)
+        {
             return;
+        }
 
         if (card < 5 || card > 8)
+        {
             return;
+        }
 
-        if (player2Matched[card - 5])
+        if (player2Matched[card - 5] == true)
+        {
             return;
+        }
 
         player2Submitted = true;
         player2Card = card;
 
         RevealSubmittedCard(2, card);
 
-        if (player1Submitted)
+        if (player1Submitted == true)
+        {
             CheckCompatibility();
+        }
     }
 
-    // REVEAL SUBMISSION
 
+    // Shows which player submitted
     [ObserversRpc]
     private void RevealSubmittedCard(int playerNumber, int card)
     {
@@ -222,68 +349,122 @@ public class RoundsSubmissionManager : NetworkBehaviour
         }
 
         if (revealText == null)
+        {
             return;
+        }
 
-        int firstPlayer = Player1GoesFirst() ? 1 : 2;
+        int firstPlayer = 1;
+
+        if (Player1GoesFirst() == false)
+        {
+            firstPlayer = 2;
+        }
 
         if (playerNumber == firstPlayer)
         {
-            string nextPlayer =
-                playerNumber == 1 ? "Player 2" : "Player 1";
+            string nextPlayer = "";
+
+            if (playerNumber == 1)
+            {
+                nextPlayer = "Player 2";
+            }
+            else
+            {
+                nextPlayer = "Player 1";
+            }
 
             revealText.text =
-                "Player " + playerNumber +
-                " submitted: " + GetCardName(card) +
-                "\n" + nextPlayer + ", choose your card!";
+                "Player " + playerNumber + " submitted: " +
+                GetCardName(card) + "\n" +
+                nextPlayer + ", choose your card!";
         }
     }
 
-    // COMPATIBILITY CHECK
 
+    // Checks if the cards are compatible
     private void CheckCompatibility()
     {
-        if (roundComplete || !player1Submitted || !player2Submitted)
+        if (roundComplete == true)
+        {
             return;
+        }
 
-        bool compatible =
-            (player1Card == 4 && player2Card == 6) ||
-            (player1Card == 3 && player2Card == 5) ||
-            (player1Card == 2 && player2Card == 8) ||
-            (player1Card == 1 && player2Card == 5) ||
-            (player1Card == 4 && player2Card == 5) ||
-            (player1Card == 1 && player2Card == 7) ||
-            (player1Card == 4 && player2Card == 7);
+        if (player1Submitted == false || player2Submitted == false)
+        {
+            return;
+        }
+
+        bool compatible = false;
+
+        if (player1Card == 4 && player2Card == 6)
+        {
+            compatible = true;
+        }
+        else if (player1Card == 3 && player2Card == 5)
+        {
+            compatible = true;
+        }
+        else if (player1Card == 2 && player2Card == 8)
+        {
+            compatible = true;
+        }
+        else if (player1Card == 1 && player2Card == 5)
+        {
+            compatible = true;
+        }
+        else if (player1Card == 4 && player2Card == 5)
+        {
+            compatible = true;
+        }
+        else if (player1Card == 1 && player2Card == 7)
+        {
+            compatible = true;
+        }
+        else if (player1Card == 4 && player2Card == 7)
+        {
+            compatible = true;
+        }
 
         roundComplete = true;
 
-        if (compatible)
+        if (compatible == true)
         {
             if (readyManager != null)
+            {
                 readyManager.AddTeamPoint();
+            }
             else
-                Debug.LogError("Round1ReadyManager is not assigned!");
+            {
+                Debug.LogError("Score manager is missing!");
+            }
 
             RemoveMatchedCharacters(player1Card, player2Card);
         }
 
         ShowRoundResult(player1Card, player2Card, compatible);
 
-        // IMPORTANT: Wait before returning to Profiles.
+        // Wait 4 seconds before starting the next round
         StartCoroutine(FinishRoundAfterDelay());
     }
 
+
+    // Waits before finishing the round
     private IEnumerator FinishRoundAfterDelay()
     {
         yield return new WaitForSeconds(4f);
 
         if (readyManager != null)
+        {
             readyManager.FinishRound();
+        }
         else
-            Debug.LogError("Round1ReadyManager is not assigned!");
+        {
+            Debug.LogError("Score manager is missing!");
+        }
     }
 
-    // REMOVE MATCHED CHARACTERS
 
+    // Removes characters that already matched
     [ObserversRpc]
     private void RemoveMatchedCharacters(int firstCard, int secondCard)
     {
@@ -299,37 +480,48 @@ public class RoundsSubmissionManager : NetworkBehaviour
         HideButton(player2Buttons, player2Index);
         HideButton(player2ProfileButtons, player2Index);
 
-        Debug.Log(
-            "Removed matched characters: " +
-            GetCardName(firstCard) + " and " +
-            GetCardName(secondCard)
-        );
+        Debug.Log("Removed " + GetCardName(firstCard) + " and " + GetCardName(secondCard));
     }
 
+
+    // Hides a button
     private void HideButton(Button[] buttons, int index)
     {
-        if (buttons == null || index < 0 || index >= buttons.Length)
+        if (buttons == null)
+        {
             return;
+        }
+
+        if (index < 0 || index >= buttons.Length)
+        {
+            return;
+        }
 
         if (buttons[index] != null)
+        {
             buttons[index].gameObject.SetActive(false);
+        }
     }
 
-    // DISPLAY RESULT
 
+    // Shows the round result
     [ObserversRpc]
-    private void ShowRoundResult(
-        int firstCard,
-        int secondCard,
-        bool compatible)
+    private void ShowRoundResult(int firstCard, int secondCard, bool compatible)
     {
         player1Submitted = true;
         player2Submitted = true;
         roundComplete = true;
 
-        string result = compatible
-            ? "COMPATIBLE! +1 POINT!"
-            : "NOT COMPATIBLE!";
+        string result = "";
+
+        if (compatible == true)
+        {
+            result = "COMPATIBLE! +1 POINT!";
+        }
+        else
+        {
+            result = "NOT COMPATIBLE!";
+        }
 
         if (revealText != null)
         {
@@ -343,21 +535,45 @@ public class RoundsSubmissionManager : NetworkBehaviour
         Debug.Log("[ROUND " + currentRound + "] " + result);
     }
 
-    // CARD NAMES
 
+    // Gets the name of a card
     private string GetCardName(int card)
     {
-        switch (card)
+        if (card == 1)
         {
-            case 1: return "Witch";
-            case 2: return "Vamp";
-            case 3: return "Wolf";
-            case 4: return "Ghost";
-            case 5: return "Fairy";
-            case 6: return "Zombie";
-            case 7: return "Skeleton";
-            case 8: return "Demon";
-            default: return "Unknown";
+            return "Witch";
+        }
+        else if (card == 2)
+        {
+            return "Vamp";
+        }
+        else if (card == 3)
+        {
+            return "Wolf";
+        }
+        else if (card == 4)
+        {
+            return "Ghost";
+        }
+        else if (card == 5)
+        {
+            return "Fairy";
+        }
+        else if (card == 6)
+        {
+            return "Zombie";
+        }
+        else if (card == 7)
+        {
+            return "Skeleton";
+        }
+        else if (card == 8)
+        {
+            return "Demon";
+        }
+        else
+        {
+            return "Unknown";
         }
     }
 }
