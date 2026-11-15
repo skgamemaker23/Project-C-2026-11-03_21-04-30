@@ -1,4 +1,3 @@
-
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,12 +5,12 @@ using TMPro;
 using PurrNet;
 
 // Started with PurrNet docs and API
-// Some ChatGPT help
+// Used ChatGPT to help with some of the code
 
 public class Gameplay2 : NetworkBehaviour
 {
     // UI
-    [Header("UI")]
+    [Header("Basic UI")]
     [SerializeField] private GameObject Profiles;
     [SerializeField] private GameObject chooseMatchPanel;
     [SerializeField] private GameObject guessMatchPanel;
@@ -19,6 +18,8 @@ public class Gameplay2 : NetworkBehaviour
     [SerializeField] private GameObject resultsPanel;
     [SerializeField] private TextMeshProUGUI resultsText;
 
+
+    //BUTTONS
 
     // Choose buttons
     [Header("Choose Buttons")]
@@ -38,49 +39,102 @@ public class Gameplay2 : NetworkBehaviour
     [SerializeField] private Button P2ReadyButton;
 
 
-    // Keeps track of which players are ready
+    // Keeps track of ready players
+    //chat hekped with thsi
     private HashSet<PlayerID> readyPlayers = new HashSet<PlayerID>();
 
+
+    // Player IDs
+    private PlayerID hostPlayerId;
+    private PlayerID clientPlayerId;
+
+    private bool hostPlayerKnown = false;
+    private bool clientPlayerKnown = false;
+
+
+    // Game checks - make sure both players ready before moving on  
     private bool localPlayerIsReady = false;
     private bool gameHasStarted = false;
     private bool guessingHasStarted = false;
 
-    // Keeps track of the local player's choices
     private bool localHasChosen = false;
     private bool localHasGuessed = false;
 
+
     // Player choices
-    private int player1Choice = -1;
-    private int player2Choice = -1;
+    private int player1Choice = 0;
+    private int player2Choice = 0;
+
 
     // Player guesses
-    private int player1Guess = -1;
-    private int player2Guess = -1;
+    private int player1Guess = 0;
+    private int player2Guess = 0;
+
 
     // Checks if players have chosen
     private bool P1Choice = false;
     private bool P2Choice = false;
 
+
     // Checks if players have guessed
     private bool P1Guess = false;
     private bool P2Guess = false;
 
+
     private const int RequiredPlayers = 2;
 
 
-    // Ready buttons
-    public void OnP1ReadyClicked()
+    private void Start()
+    {
+        // Show profiles first
+        if (Profiles != null)
+        {
+            Profiles.SetActive(true);
+        }
+
+        // Hide the other screens
+        if (chooseMatchPanel != null)
+        {
+            chooseMatchPanel.SetActive(false);
+        }
+
+        if (guessMatchPanel != null)
+        {
+            guessMatchPanel.SetActive(false);
+        }
+
+        if (resultsPanel != null)
+        {
+            resultsPanel.SetActive(false);
+        }
+
+        // Turn off choice and guess buttons
+        SetButtons(P1ChooseButtons, false);
+        SetButtons(P2ChooseButtons, false);
+
+        SetButtons(P1GuessButtons, false);
+        SetButtons(P2GuessButtons, false);
+
+        if (statusText != null)
+        {
+            statusText.text = "Read the profiles, then click Choose Match when ready!";
+        }
+    }
+
+
+    // Ready button methods
+    public void OnP1Ready()
     {
         TryStartGame();
     }
 
-    public void OnP2ReadyClicked()
+    public void OnP2Ready()
     {
         TryStartGame();
     }
 
 
-    // Checks if the players can start the game
+    // Checks if players can start
     private void TryStartGame()
     {
         if (localPlayerIsReady == true)
@@ -95,28 +149,22 @@ public class Gameplay2 : NetworkBehaviour
 
         localPlayerIsReady = true;
 
-        if (isHost == true)
+        // Turn off ready buttons
+        if (P1ReadyButton != null)
         {
-            if (P1ReadyButton != null)
-            {
-                P1ReadyButton.interactable = false;
-            }
-        }
-        else
-        {
-            if (P2ReadyButton != null)
-            {
-                P2ReadyButton.interactable = false;
-            }
+            P1ReadyButton.interactable = false;
         }
 
-        Debug.Log("Player is ready!");
+        if (P2ReadyButton != null)
+        {
+            P2ReadyButton.interactable = false;
+        }
 
         SendReadyToServer();
     }
 
 
-    // Sends Ready information to the server
+    // Sends ready information to the server
     [ServerRpc(requireOwnership: false)]
     private void SendReadyToServer(RPCInfo info = default)
     {
@@ -125,17 +173,38 @@ public class Gameplay2 : NetworkBehaviour
             return;
         }
 
+        if (NetworkManager.main == null)
+        {
+            return;
+        }
+
+        // Find the host player
+        hostPlayerId = NetworkManager.main.localPlayer;
+        hostPlayerKnown = true;
+
+        // Find the client player
+        if (info.sender != hostPlayerId)
+        {
+            clientPlayerId = info.sender;
+            clientPlayerKnown = true;
+        }
+
         readyPlayers.Add(info.sender);
 
-        Debug.Log("Ready players: " + readyPlayers.Count);
+        if (readyPlayers.Count == 1)
+        {
+            UpdateStatus("Waiting for the other player...");
+        }
 
         // Start when both players are ready
         if (readyPlayers.Count >= RequiredPlayers)
         {
-            Debug.Log("Both players are ready!");
+            if (clientPlayerKnown == false)
+            {
+                return;
+            }
 
             readyPlayers.Clear();
-
             gameHasStarted = true;
 
             StartGame();
@@ -154,34 +223,28 @@ public class Gameplay2 : NetworkBehaviour
         localHasChosen = false;
         localHasGuessed = false;
 
-        // Reset player choices
-        player1Choice = -1;
-        player2Choice = -1;
+        // Reset choices
+        player1Choice = 0;
+        player2Choice = 0;
 
-        // Reset player guesses
-        player1Guess = -1;
-        player2Guess = -1;
+        // Reset guesses
+        player1Guess = 0;
+        player2Guess = 0;
 
-        // Reset choice checks
+        // Reset checks
         P1Choice = false;
         P2Choice = false;
 
-        // Reset guess checks
         P1Guess = false;
         P2Guess = false;
 
-        // Turn ready buttons back on
-        if (P1ReadyButton != null)
+        // Hide profiles
+        if (Profiles != null)
         {
-            P1ReadyButton.interactable = true;
+            Profiles.SetActive(false);
         }
 
-        if (P2ReadyButton != null)
-        {
-            P2ReadyButton.interactable = true;
-        }
-
-        // Open the choose screen
+        // Show choose screen
         if (chooseMatchPanel != null)
         {
             chooseMatchPanel.SetActive(true);
@@ -197,11 +260,9 @@ public class Gameplay2 : NetworkBehaviour
             resultsPanel.SetActive(false);
         }
 
-        // Turn choose buttons on
         SetButtons(P1ChooseButtons, true);
         SetButtons(P2ChooseButtons, true);
 
-        // Turn guess buttons off
         SetButtons(P1GuessButtons, false);
         SetButtons(P2GuessButtons, false);
 
@@ -209,62 +270,24 @@ public class Gameplay2 : NetworkBehaviour
         {
             statusText.text = "Choose your match!";
         }
-
-        Debug.Log("Choose screen opened!");
     }
 
 
     // Player choice buttons
-    public void ChooseWitch()
-    {
-        SendChoice(0);
-    }
-
-    public void ChooseVamp()
-    {
-        SendChoice(1);
-    }
-
-    public void ChooseWolf()
-    {
-        SendChoice(2);
-    }
-
-    public void ChooseGhost()
-    {
-        SendChoice(3);
-    }
-
-    public void ChooseFairy()
-    {
-        SendChoice(4);
-    }
-
-    public void ChooseZombie()
-    {
-        SendChoice(5);
-    }
-
-    public void ChooseSkeleton()
-    {
-        SendChoice(6);
-    }
-
-    public void ChooseDemon()
-    {
-        SendChoice(7);
-    }
+    public void ChooseWitch() { SendChoice(0); }
+    public void ChooseVamp() { SendChoice(1); }
+    public void ChooseWolf() { SendChoice(2); }
+    public void ChooseGhost() { SendChoice(3); }
+    public void ChooseFairy() { SendChoice(4); }
+    public void ChooseZombie() { SendChoice(5); }
+    public void ChooseSkeleton() { SendChoice(6); }
+    public void ChooseDemon() { SendChoice(7); }
 
 
     // Sends the chosen profile to the server
     private void SendChoice(int choice)
     {
-        if (gameHasStarted == false)
-        {
-            return;
-        }
-
-        if (guessingHasStarted == true)
+        if (gameHasStarted == false || guessingHasStarted == true)
         {
             return;
         }
@@ -281,24 +304,13 @@ public class Gameplay2 : NetworkBehaviour
 
         localHasChosen = true;
 
-        if (isHost == true)
-        {
-            SetButtons(P1ChooseButtons, false);
-        }
-        else
-        {
-            SetButtons(P2ChooseButtons, false);
-        }
-
-        Debug.Log("Sending choice: " + GetProfileName(choice));
-
-        SendChoiceToServer(choice, isHost);
+        SendChoiceToServer(choice);
     }
 
 
     // Saves the choices on the server
     [ServerRpc(requireOwnership: false)]
-    private void SendChoiceToServer(int choice, bool player1)
+    private void SendChoiceToServer(int choice, RPCInfo info = default)
     {
         if (gameHasStarted == false || guessingHasStarted == true)
         {
@@ -310,7 +322,13 @@ public class Gameplay2 : NetworkBehaviour
             return;
         }
 
-        if (player1 == true)
+        if (hostPlayerKnown == false || clientPlayerKnown == false)
+        {
+            return;
+        }
+
+        // Check which player sent the choice
+        if (info.sender == hostPlayerId)
         {
             if (P1Choice == true)
             {
@@ -319,10 +337,8 @@ public class Gameplay2 : NetworkBehaviour
 
             player1Choice = choice;
             P1Choice = true;
-
-            Debug.Log("Player 1 has chosen!");
         }
-        else
+        else if (info.sender == clientPlayerId)
         {
             if (P2Choice == true)
             {
@@ -331,16 +347,37 @@ public class Gameplay2 : NetworkBehaviour
 
             player2Choice = choice;
             P2Choice = true;
-
-            Debug.Log("Player 2 has chosen!");
+        }
+        else
+        {
+            return;
         }
 
-        // Open the guess screen when both players have chosen
+        ChoiceAccepted(info.sender);
+
+        // Open guess screen when both players have chosen
         if (P1Choice == true && P2Choice == true)
         {
-            Debug.Log("Both players have chosen!");
-
             GuessingTime();
+        }
+        else
+        {
+            UpdateStatus("Waiting for the other player to choose...");
+        }
+    }
+
+
+    // Turns off buttons after a player chooses
+    [ObserversRpc]
+    private void ChoiceAccepted(PlayerID player)
+    {
+        if (NetworkManager.main != null &&
+            NetworkManager.main.localPlayer == player)
+        {
+            localHasChosen = true;
+
+            SetButtons(P1ChooseButtons, false);
+            SetButtons(P2ChooseButtons, false);
         }
     }
 
@@ -350,6 +387,7 @@ public class Gameplay2 : NetworkBehaviour
     private void GuessingTime()
     {
         guessingHasStarted = true;
+        localHasGuessed = false;
 
         if (chooseMatchPanel != null)
         {
@@ -361,63 +399,28 @@ public class Gameplay2 : NetworkBehaviour
             guessMatchPanel.SetActive(true);
         }
 
-        // Turn choose buttons off
         SetButtons(P1ChooseButtons, false);
         SetButtons(P2ChooseButtons, false);
 
-        // Turn guess buttons on
         SetButtons(P1GuessButtons, true);
         SetButtons(P2GuessButtons, true);
 
         if (statusText != null)
         {
-            statusText.text = "Guess which profile the other player chose!";
+            statusText.text = "Guess what the other player chose!";
         }
-
-        Debug.Log("Guess screen opened!");
     }
 
 
     // Player guess buttons
-    public void GuessWitch()
-    {
-        SendGuess(0);
-    }
-
-    public void GuessVamp()
-    {
-        SendGuess(1);
-    }
-
-    public void GuessWolf()
-    {
-        SendGuess(2);
-    }
-
-    public void GuessGhost()
-    {
-        SendGuess(3);
-    }
-
-    public void GuessFairy()
-    {
-        SendGuess(4);
-    }
-
-    public void GuessZombie()
-    {
-        SendGuess(5);
-    }
-
-    public void GuessSkeleton()
-    {
-        SendGuess(6);
-    }
-
-    public void GuessDemon()
-    {
-        SendGuess(7);
-    }
+    public void GuessWitch() { SendGuess(0); }
+    public void GuessVamp() { SendGuess(1); }
+    public void GuessWolf() { SendGuess(2); }
+    public void GuessGhost() { SendGuess(3); }
+    public void GuessFairy() { SendGuess(4); }
+    public void GuessZombie() { SendGuess(5); }
+    public void GuessSkeleton() { SendGuess(6); }
+    public void GuessDemon() { SendGuess(7); }
 
 
     // Sends the guess to the server
@@ -438,26 +441,13 @@ public class Gameplay2 : NetworkBehaviour
             return;
         }
 
-        localHasGuessed = true;
-
-        if (isHost == true)
-        {
-            SetButtons(P1GuessButtons, false);
-        }
-        else
-        {
-            SetButtons(P2GuessButtons, false);
-        }
-
-        Debug.Log("Sending guess: " + GetProfileName(guess));
-
-        SendGuessToServer(guess, isHost);
+        SendGuessToServer(guess);
     }
 
 
     // Saves the guesses on the server
     [ServerRpc(requireOwnership: false)]
-    private void SendGuessToServer(int guess, bool player1)
+    private void SendGuessToServer(int guess, RPCInfo info = default)
     {
         if (guessingHasStarted == false)
         {
@@ -474,7 +464,13 @@ public class Gameplay2 : NetworkBehaviour
             return;
         }
 
-        if (player1 == true)
+        if (hostPlayerKnown == false || clientPlayerKnown == false)
+        {
+            return;
+        }
+
+        // Check which player sent the guess
+        if (info.sender == hostPlayerId)
         {
             if (P1Guess == true)
             {
@@ -483,10 +479,8 @@ public class Gameplay2 : NetworkBehaviour
 
             player1Guess = guess;
             P1Guess = true;
-
-            Debug.Log("Player 1 has guessed!");
         }
-        else
+        else if (info.sender == clientPlayerId)
         {
             if (P2Guess == true)
             {
@@ -495,15 +489,17 @@ public class Gameplay2 : NetworkBehaviour
 
             player2Guess = guess;
             P2Guess = true;
-
-            Debug.Log("Player 2 has guessed!");
+        }
+        else
+        {
+            return;
         }
 
-        // Show results after both players have guessed
+        GuessAccepted(info.sender);
+
+        // Show results when both players have guessed
         if (P1Guess == true && P2Guess == true)
         {
-            Debug.Log("Both players have guessed!");
-
             ShowResults(
                 player1Choice,
                 player2Choice,
@@ -511,23 +507,42 @@ public class Gameplay2 : NetworkBehaviour
                 player2Guess
             );
         }
+        else
+        {
+            UpdateStatus("Waiting for the other player to guess...");
+        }
     }
 
 
-    // Shows the results for both players
+    // Turns off buttons after a player guesses
+    [ObserversRpc]
+    private void GuessAccepted(PlayerID player)
+    {
+        if (NetworkManager.main != null &&
+            NetworkManager.main.localPlayer == player)
+        {
+            localHasGuessed = true;
+
+            SetButtons(P1GuessButtons, false);
+            SetButtons(P2GuessButtons, false);
+        }
+    }
+
+
+    // Shows the results
     [ObserversRpc]
     private void ShowResults(int firstChoice, int secondChoice, int firstGuess, int secondGuess)
     {
         int player1Score = 0;
         int player2Score = 0;
 
-        // Player 1 gets a point for guessing Player 2's choice
+        // Check Player 1's guess
         if (firstGuess == secondChoice)
         {
             player1Score = 1;
         }
 
-        // Player 2 gets a point for guessing Player 1's choice
+        // Check Player 2's guess
         if (secondGuess == firstChoice)
         {
             player2Score = 1;
@@ -575,52 +590,34 @@ public class Gameplay2 : NetworkBehaviour
 
         if (statusText != null)
         {
-            statusText.text = "Game finished!";
+            statusText.text = "";
         }
+    }
 
-        Debug.Log("Game Mode 2 finished!");
+
+    // Updates the status text
+    [ObserversRpc]
+    private void UpdateStatus(string message)
+    {
+        if (statusText != null)
+        {
+            statusText.text = message;
+        }
     }
 
 
     // Gets the profile name
     private string GetProfileName(int profile)
     {
-        if (profile == 0)
-        {
-            return "Witch";
-        }
-        else if (profile == 1)
-        {
-            return "Vamp";
-        }
-        else if (profile == 2)
-        {
-            return "Wolf";
-        }
-        else if (profile == 3)
-        {
-            return "Ghost";
-        }
-        else if (profile == 4)
-        {
-            return "Fairy";
-        }
-        else if (profile == 5)
-        {
-            return "Zombie";
-        }
-        else if (profile == 6)
-        {
-            return "Skeleton";
-        }
-        else if (profile == 7)
-        {
-            return "Demon";
-        }
-        else
-        {
-            return "Unknown";
-        }
+        if (profile == 0) return "Witch";
+        else if (profile == 1) return "Vamp";
+        else if (profile == 2) return "Wolf";
+        else if (profile == 3) return "Ghost";
+        else if (profile == 4) return "Fairy";
+        else if (profile == 5) return "Zombie";
+        else if (profile == 6) return "Skeleton";
+        else if (profile == 7) return "Demon";
+        else return "Unknown";
     }
 
 

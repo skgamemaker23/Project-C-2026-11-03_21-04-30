@@ -11,51 +11,31 @@ using UnityEngine.SceneManagement;
 
 public class StartRounds : NetworkBehaviour
 {
-    // Ready buttons
-    [Header("Round 1 Ready Buttons")]
+    [Header("Ready Buttons")]
     [SerializeField] private Button[] startRound1Buttons;
-
-    [Header("Round 2 Ready Buttons")]
     [SerializeField] private Button[] startRound2Buttons;
-
-    [Header("Round 3 Ready Buttons")]
     [SerializeField] private Button[] startRound3Buttons;
-
-    [Header("Round 4 Ready Buttons")]
     [SerializeField] private Button[] startRound4Buttons;
 
 
-    // Player profiles
-    [Header("Profile UI")]
+    [Header("UI")]
     [SerializeField] private GameObject profiles;
-
-
-    // Gameplay screen
-    [Header("Shared Submission Screen")]
     [SerializeField] private GameObject roundContent;
-
-
-    // Submission manager
-    [Header("Submission Manager")]
-    [SerializeField] private RoundsSubmissionManager submissionManager;
-
-
-    // Score
-    [Header("Score UI")]
     [SerializeField] private TextMeshProUGUI teamScoreText;
-
-
-    // Win and lose screen
-    [Header("Win / Lose Screen")]
     [SerializeField] private GameObject resultsPanel;
     [SerializeField] private TextMeshProUGUI resultText;
 
 
-    // Keeps track of who is ready
+    [Header("Submission Manager")]
+    [SerializeField] private RoundsSubmissionManager submissionManager;
+
+
+    // Keeps track of which players are ready
     private HashSet<PlayerID> readyPlayers = new HashSet<PlayerID>();
 
-    private bool localPlayerIsReady = false;
-    private bool roundHasStarted = false;
+    // Checks if the player is ready and if the round has started
+    private bool PlayerReady = false;
+    private bool roundStarted = false;
 
     private int currentRound = 0;
     private int teamScore = 0;
@@ -65,10 +45,8 @@ public class StartRounds : NetworkBehaviour
 
     private void Start()
     {
-        
-
-        ShowOnlyRoundButtons(1);
-        UpdateScoreDisplay(teamScore);
+        ShowRoundButtons(1);
+        UpdateScore(teamScore);
     }
 
 
@@ -97,12 +75,12 @@ public class StartRounds : NetworkBehaviour
     // Checks if the player can start the round
     private void TryStartRound(int round)
     {
-        if (localPlayerIsReady == true)
+        if (PlayerReady == true)
         {
             return;
         }
 
-        if (roundHasStarted == true)
+        if (roundStarted == true)
         {
             return;
         }
@@ -112,7 +90,7 @@ public class StartRounds : NetworkBehaviour
             return;
         }
 
-        localPlayerIsReady = true;
+        PlayerReady = true;
 
         SetButtons(GetButtonsForRound(round), false);
 
@@ -124,7 +102,7 @@ public class StartRounds : NetworkBehaviour
     [ServerRpc]
     private void SendReadyToServer(int round, RPCInfo info = default)
     {
-        if (roundHasStarted == true)
+        if (roundStarted == true)
         {
             return;
         }
@@ -136,26 +114,26 @@ public class StartRounds : NetworkBehaviour
 
         readyPlayers.Add(info.sender);
 
-        // Start when both players are ready
+        // Starts the round when both players are ready
         if (readyPlayers.Count >= RequiredPlayers)
         {
             currentRound = round;
-            roundHasStarted = true;
+            roundStarted = true;
 
             readyPlayers.Clear();
 
-            StartRoundForEveryone(round);
+            StartRound(round);
         }
     }
 
 
     // Starts the round for both players
     [ObserversRpc]
-    private void StartRoundForEveryone(int round)
+    private void StartRound(int round)
     {
         currentRound = round;
-        roundHasStarted = true;
-        localPlayerIsReady = false;
+        roundStarted = true;
+        PlayerReady = false;
 
         if (profiles != null)
         {
@@ -167,7 +145,7 @@ public class StartRounds : NetworkBehaviour
             roundContent.SetActive(true);
         }
 
-        // Turn off all ready buttons
+        // Turns off all ready buttons
         SetButtons(startRound1Buttons, false);
         SetButtons(startRound2Buttons, false);
         SetButtons(startRound3Buttons, false);
@@ -177,47 +155,43 @@ public class StartRounds : NetworkBehaviour
         {
             submissionManager.BeginRound(round);
         }
-        else
-        {
-        }
-
     }
 
 
     // Called when the round is finished
     public void FinishRound()
     {
-        if (roundHasStarted == false)
+        if (roundStarted == false)
         {
             return;
         }
 
-        roundHasStarted = false;
+        roundStarted = false;
         readyPlayers.Clear();
 
-        FinishRoundForEveryone(currentRound, teamScore);
+        FinishRound(currentRound, teamScore);
     }
 
 
     // Finishes the round for both players
     [ObserversRpc]
-    private void FinishRoundForEveryone(int completedRound, int score)
+    private void FinishRound(int completedRound, int score)
     {
         currentRound = completedRound;
         teamScore = score;
 
-        roundHasStarted = false;
-        localPlayerIsReady = false;
+        roundStarted = false;
+        PlayerReady = false;
 
         if (roundContent != null)
         {
             roundContent.SetActive(false);
         }
 
-        HideAllRoundButtons();
-        UpdateScoreDisplay(score);
+        HideRoundButtons();
+        UpdateScore(score);
 
-        // Check if all rounds are finished
+        // Checks if all rounds are finished
         if (completedRound >= 4)
         {
             if (profiles != null)
@@ -242,29 +216,23 @@ public class StartRounds : NetworkBehaviour
                 }
             }
 
-            if (score >= 3)
-            {
-            }
-            
-
             return;
         }
 
-        // Show profiles and the next round buttons
+        // Shows profiles and the next round buttons
         if (profiles != null)
         {
             profiles.SetActive(true);
         }
 
-        ShowOnlyRoundButtons(completedRound + 1);
-
+        ShowRoundButtons(completedRound + 1);
     }
 
 
     // Shows the buttons for the next round
-    private void ShowOnlyRoundButtons(int round)
+    private void ShowRoundButtons(int round)
     {
-        HideAllRoundButtons();
+        HideRoundButtons();
 
         Button[] nextButtons = GetButtonsForRound(round);
 
@@ -285,7 +253,7 @@ public class StartRounds : NetworkBehaviour
 
 
     // Hides all round buttons
-    private void HideAllRoundButtons()
+    private void HideRoundButtons()
     {
         SetButtonObjectsActive(startRound1Buttons, false);
         SetButtonObjectsActive(startRound2Buttons, false);
@@ -361,33 +329,24 @@ public class StartRounds : NetworkBehaviour
     {
         teamScore++;
 
-        Debug.Log("TEAM SCORE: " + teamScore + "/4");
-
-        UpdateScoreForEveryone(teamScore);
+        UpdateScore(teamScore);
     }
 
 
-    // Updates the score for both players
+    // Updates the score and display for both players
     [ObserversRpc]
-    private void UpdateScoreForEveryone(int newScore)
+    private void UpdateScore(int newScore)
     {
         teamScore = newScore;
 
-        UpdateScoreDisplay(newScore);
-    }
-
-
-    // Shows the score on the screen
-    private void UpdateScoreDisplay(int score)
-    {
         if (teamScoreText != null)
         {
-            teamScoreText.text = "Score: " + score + "/4";
+            teamScoreText.text = "Score: " + teamScore + "/4";
         }
     }
 
 
-    // Return to main menu
+    // Returns to the main menu
     public void ReturnToMainMenu()
     {
         RequestReturnToMainMenu();
